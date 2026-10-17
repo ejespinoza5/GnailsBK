@@ -56,6 +56,32 @@ export class AuthController {
     res.json({ usuario: usuarioAPublico(usuario) });
   };
 
+  /**
+   * GET /api/auth/sesion — lo primero que pregunta la app al abrirse.
+   * Siempre responde 200 (sin errores rojos en la consola para quien no inició sesión):
+   * con sesión → el usuario; access vencido → renueva en silencio con el refresh; sin sesión → null.
+   */
+  sesion = async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    try {
+      if (req.auth) {
+        const usuario = await this.auth.obtenerPerfil(req.auth.usuarioId);
+        return res.json({ usuario: usuarioAPublico(usuario) });
+      }
+      const refresh = this.cookies.leerRefresh(req);
+      if (refresh) {
+        const { usuario, accessToken, refreshToken } = await this.sesiones.renovar(refresh);
+        this.cookies.escribir(res, { accessToken, refreshToken });
+        return res.json({ usuario: usuarioAPublico(usuario) });
+      }
+    } catch (err) {
+      if (err.status !== 401) throw err;
+    }
+    // Sesión cerrada, vencida o cookies inválidas: se limpian para no repetir el intento.
+    if (this.cookies.hayCookies(req)) this.cookies.borrar(res);
+    res.json({ usuario: null });
+  };
+
   // GET /api/auth/me
   me = async (req, res) => {
     const usuario = await this.auth.obtenerPerfil(req.auth.usuarioId);

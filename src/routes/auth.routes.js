@@ -39,6 +39,7 @@ export function crearAuthRoutes({ authController: c, cuentaController: cuenta, v
   router.post('/login', limiteLogin, validar(esquemaLogin), c.login);
   router.post('/google', limiteLogin, validar(esquemaGoogle), c.google);
   router.post('/refresh', limiteRefresh, c.refresh);
+  router.get('/sesion', limiteRefresh, c.sesion);
   router.get('/me', requiereSesion, c.me);
   router.post('/logout', c.logout);
   router.post('/logout-todas', requiereSesion, c.logoutTodas);

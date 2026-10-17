@@ -32,6 +32,11 @@ export class CookieManager {
     res.clearCookie(this.nombreRefresh, { ...this.base, path: this.rutaRefresh });
   }
 
+  /** ¿El navegador mandó alguna cookie de sesión (válida o no)? */
+  hayCookies(req) {
+    return Boolean(req.cookies?.[this.nombreAccess] || req.cookies?.[this.nombreRefresh]);
+  }
+
   leerAccess(req) {
     return this.#leer(req, this.nombreAccess, 2048);
   }
