@@ -49,6 +49,15 @@ export const limiteRefresh = rateLimit({
   message: { error: 'Demasiadas solicitudes. Espera unos minutos.' },
 });
 
+/** Notificación de prueba: unas pocas por persona, para que no se use como envío masivo. */
+export const limitePruebaPush = rateLimit({
+  ...opcionesBase,
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  keyGenerator: (req) => `usuario:${req.auth.usuarioId}`,
+  message: { error: 'Ya enviaste varias pruebas. Espera unos minutos.' },
+});
+
 /** Evita la creación masiva de cuentas (por IP). */
 export const limiteRegistro = rateLimit({
   ...opcionesBase,

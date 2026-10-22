@@ -37,6 +37,19 @@ export class NotificacionService {
     return { destinatarios: ids.length, dispositivos };
   }
 
+  /** Push de prueba a los dispositivos de la persona (no queda en la bandeja). */
+  async probar(usuarioId) {
+    const tokens = await this.repo.tokensDe([usuarioId]);
+    const r = await this.push.enviar(tokens, {
+      titulo: 'Notificación de prueba',
+      cuerpo: '¡Funciona! Así te llegarán los avisos de Geovys Nails.',
+      url: '/',
+      tipo: 'prueba',
+    });
+    if (r.invalidos.length) await this.repo.eliminarTokens(r.invalidos);
+    return { dispositivos: tokens.length, entregados: r.entregados };
+  }
+
   // ---------- Bandeja de la persona
 
   async bandeja(usuarioId) {

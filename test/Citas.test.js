@@ -62,9 +62,9 @@ describe('DisponibilidadService', () => {
     s = armar();
   });
 
-  test('turnos cada 30 min que terminan antes del cierre', async () => {
+  test('turnos cada 30 min hasta la hora del último turno (incluida)', async () => {
     const { dias } = await s.disponibilidad.calcular({ servicioId: 's1', desde: LUNES, dias: 1 });
-    assert.deepEqual(horas(dias[0]), ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00']);
+    assert.deepEqual(horas(dias[0]), ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00']);
   });
 
   test('domingo cerrado y día pasado', async () => {
@@ -83,7 +83,7 @@ describe('DisponibilidadService', () => {
     s.citas.push({ id: 'x', profesionalId: 'p1', fecha: LUNES, horaInicio: '10:00', horaFin: '11:00', estado: 'confirmada' });
     const { dias } = await s.disponibilidad.calcular({ servicioId: 's1', profesionalId: 'p1', desde: LUNES, dias: 1 });
     // 09:30 (terminaría 10:30) y 10:30 chocan; 09:00 y 11:00 no.
-    assert.deepEqual(horas(dias[0]), ['09:00', '11:00', '11:30', '12:00']);
+    assert.deepEqual(horas(dias[0]), ['09:00', '11:00', '11:30', '12:00', '12:30', '13:00']);
   });
 
   test('las citas canceladas no ocupan', async () => {
@@ -143,7 +143,7 @@ describe('CitaService', () => {
   test('no permite un turno ocupado ni fuera del horario', async () => {
     await s.citaService.reservar('ana', { servicioId: 's1', profesionalId: 'p1', fecha: LUNES, hora: '10:00' });
     await assert.rejects(s.citaService.reservar('bea', { servicioId: 's1', profesionalId: 'p1', fecha: LUNES, hora: '10:30' }), ConflictoError);
-    await assert.rejects(s.citaService.reservar('bea', { servicioId: 's1', profesionalId: 'p1', fecha: LUNES, hora: '12:30' }), ConflictoError);
+    await assert.rejects(s.citaService.reservar('bea', { servicioId: 's1', profesionalId: 'p1', fecha: LUNES, hora: '13:30' }), ConflictoError);
   });
 
   test('si la BDD detecta el cruce (carrera), responde como horario ocupado', async () => {

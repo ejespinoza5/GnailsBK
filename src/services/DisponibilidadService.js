@@ -99,7 +99,8 @@ export class DisponibilidadService {
         .map((o) => [aMinutos(o.inicio), aMinutos(o.fin)]);
       carga[p.id] = suyas.reduce((t, [a, b]) => t + (b - a), 0);
 
-      for (let t = apertura; t + duracion <= cierre; t += config.intervaloMin) {
+      // La hora final del horario es la del último turno: a esa hora todavía se puede reservar.
+      for (let t = apertura; t <= cierre && t + duracion <= 24 * 60; t += config.intervaloMin) {
         if (minutosHasta(ahora, fecha, aHora(t)) < anticipacion) continue;
         if (suyas.some(([ini, fin]) => t < fin && t + duracion > ini)) continue;
         const hora = aHora(t);

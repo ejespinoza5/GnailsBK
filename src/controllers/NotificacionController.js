@@ -28,6 +28,11 @@ export class NotificacionController {
     res.status(204).end();
   };
 
+  // POST /api/notificaciones/prueba
+  probar = async (req, res) => {
+    res.json(await this.notif.probar(req.auth.usuarioId));
+  };
+
   // GET /api/notificaciones/preferencias
   preferencias = async (req, res) => {
     res.json({ preferencias: await this.notif.preferencias(req.auth.usuarioId), pushServidor: this.notif.pushActivo });
