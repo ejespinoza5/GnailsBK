@@ -62,6 +62,16 @@ export class AvisosCitas {
     await this.#enviar([profesionalUsuarioId], actorId, { ...nueva, url: `/equipo?fecha=${cita.fecha}` });
   }
 
+  /** El salón vio la cita nueva: tranquilidad para la clienta de que su turno quedó en firme. */
+  async vista(cita, actorId) {
+    await this.#enviar([cita.clienteId], actorId, {
+      tipo: 'cita_recibida',
+      titulo: '¡Tu turno está asegurado!',
+      cuerpo: `Geovys Nails ya recibió tu cita de ${cita.servicioNombre} con ${cita.profesionalNombre}, ${this.#cuando(cita)}. ¡Te esperamos!`.replace('m..', 'm.'),
+      url: '/mis-turnos',
+    });
+  }
+
   async reprogramada(cita, actorId) {
     const { profesionalUsuarioId } = await this.#equipo(cita);
     await this.#enviar([cita.clienteId], actorId, {
@@ -138,6 +148,7 @@ export class AvisosCitas {
 /** Para las pruebas y para cuando no se quieren avisos: no hace nada. */
 export const avisosNulos = {
   reservada: async () => {},
+  vista: async () => {},
   reprogramada: async () => {},
   cancelada: async () => {},
   completada: async () => {},

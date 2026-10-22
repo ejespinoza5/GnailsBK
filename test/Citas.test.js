@@ -11,7 +11,7 @@ const LUNES = '2026-10-19';
 const relojFijo = (fecha = HOY, minutos = 8 * 60) => ({ ahora: () => ({ fecha, minutos }) });
 
 /** Repositorios en memoria con la misma interfaz que los reales. */
-function armar({ reloj = relojFijo(), config = {} } = {}) {
+function armar({ reloj = relojFijo(), config = {}, avisos } = {}) {
   const servicio = { id: 's1', nombre: 'Manicure', duracionMin: 60, precio: 18.5, activo: true, disponibleDesde: null, disponibleHasta: null };
   const profesionales = [
     { id: 'p1', nombre: 'Carla', diasLaborales: [1, 2, 3, 4, 5, 6], activo: true },
@@ -41,6 +41,12 @@ function armar({ reloj = relojFijo(), config = {} } = {}) {
       return cita;
     },
     buscarPorId: async (id) => citas.find((c) => c.id === id) ?? null,
+    marcarVista: async (id) => {
+      const c = citas.find((x) => x.id === id);
+      if (c.vistaEn) return false;
+      c.vistaEn = new Date();
+      return true;
+    },
     cambiarEstado: async (id, { estado, estadoActual }) => {
       const c = citas.find((x) => x.id === id);
       if (estadoActual && c.estado !== estadoActual) return null;
@@ -50,7 +56,7 @@ function armar({ reloj = relojFijo(), config = {} } = {}) {
   };
 
   const disponibilidad = new DisponibilidadService({ servicioRepo, profesionalRepo, agendaRepo, citaRepo, reloj });
-  const citaService = new CitaService({ citaRepo, agendaRepo, disponibilidadService: disponibilidad, reloj });
+  const citaService = new CitaService({ citaRepo, agendaRepo, disponibilidadService: disponibilidad, reloj, ...(avisos && { avisos }) });
   return { disponibilidad, citaService, citas, bloqueos, servicio, horario };
 }
 
@@ -177,5 +183,35 @@ describe('CitaService', () => {
 
     const cancelada = await s.citaService.cancelarPorCliente('ana', cita.id);
     assert.equal(cancelada.estado, 'cancelada');
+  });
+});
+
+describe('Cita vista por el salón', () => {
+  const admin = { rol: 'admin', usuarioId: 'duena' };
+
+  test('avisa a la clienta una sola vez que su turno está asegurado', async () => {
+    const vistas = [];
+    const s = armar({ avisos: { reservada: async () => {}, vista: async (cita) => vistas.push(cita.id) } });
+    const cita = await s.citaService.reservar('ana', { servicioId: 's1', profesionalId: 'p1', fecha: LUNES, hora: '10:00' });
+    await s.citaService.marcarVista(admin, cita.id);
+    await s.citaService.marcarVista(admin, cita.id);
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(vistas, [cita.id]);
+    assert.ok(s.citas[0].vistaEn);
+  });
+
+  test('una profesional no puede marcar citas de otra', async () => {
+    const s = armar();
+    const cita = await s.citaService.reservar('ana', { servicioId: 's1', profesionalId: 'p1', fecha: LUNES, hora: '10:00' });
+    await assert.rejects(s.citaService.marcarVista({ rol: 'profesional', usuarioId: 'u2', profesionalId: 'p2' }, cita.id), NoEncontradoError);
+  });
+
+  test('una cita que ya pasó se marca sin avisar', async () => {
+    const vistas = [];
+    const s = armar({ reloj: relojFijo('2026-10-20', 9 * 60), avisos: { vista: async (c) => vistas.push(c.id) } });
+    s.citas.push({ id: 'vieja', clienteId: 'ana', profesionalId: 'p1', fecha: LUNES, horaInicio: '10:00', horaFin: '11:00', estado: 'confirmada' });
+    await s.citaService.marcarVista(admin, 'vieja');
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(vistas, []);
   });
 });

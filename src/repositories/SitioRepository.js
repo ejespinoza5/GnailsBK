@@ -14,6 +14,7 @@ function filaASitio(f) {
     whatsapp: f.whatsapp,
     instagram: f.instagram,
     facebook: f.facebook,
+    tiktok: f.tiktok ?? null,
   };
 }
 
@@ -55,10 +56,10 @@ export class SitioRepository {
     const { rows } = await this.db.query(
       `UPDATE sitio
           SET direccion = $1, referencia = $2, latitud = $3, longitud = $4, maps_url = $5,
-              whatsapp = $6, instagram = $7, facebook = $8
+              whatsapp = $6, instagram = $7, facebook = $8, tiktok = $9
         WHERE id = 1
         RETURNING *`,
-      [d.direccion, d.referencia, d.latitud, d.longitud, d.mapsUrl, d.whatsapp, d.instagram, d.facebook],
+      [d.direccion, d.referencia, d.latitud, d.longitud, d.mapsUrl, d.whatsapp, d.instagram, d.facebook, d.tiktok],
     );
     return filaASitio(rows[0]);
   }

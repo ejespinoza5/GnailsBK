@@ -61,6 +61,13 @@ export const esquemaUbicacion = z
       .or(z.literal(''))
       .transform((v) => (v ? v.replace(/^@/, '') : null)),
     facebook: enlace,
+    tiktok: z
+      .string()
+      .trim()
+      .regex(/^@?[A-Za-z0-9._]{2,24}$/, 'Escribe solo el usuario, por ejemplo @geovysnails')
+      .nullish()
+      .or(z.literal(''))
+      .transform((v) => (v ? v.replace(/^@/, '') : null)),
   })
   .strict()
   .refine((d) => (d.latitud === null) === (d.longitud === null), {

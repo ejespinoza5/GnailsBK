@@ -616,3 +616,26 @@ ALTER TABLE citas ADD COLUMN IF NOT EXISTS precio_max  NUMERIC(10,2);
 -- La administradora lo edita en "Reglas de reserva". Vacío = no se muestra.
 ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS mensaje_reserva VARCHAR(200) NOT NULL
     DEFAULT 'Recuerda llegar 5 minutitos antes para empezar a tiempo. ¡Te esperamos!';
+
+
+-- =====================================================================
+-- 2026-10-22  ·  TIKTOK Y CITAS "VISTAS" POR EL SALÓN
+--   Seguro ejecutarlo aunque ya hayas corrido los bloques anteriores.
+-- =====================================================================
+
+-- Usuario de TikTok del salón (sin @). Aparece en el pie de la página.
+ALTER TABLE sitio ADD COLUMN IF NOT EXISTS tiktok VARCHAR(60);
+
+-- Cuándo la dueña o la profesional marcó la cita como vista. La clienta no lo ve en la app:
+-- solo le llega el aviso "Tu turno está asegurado". Las citas que agenda el salón nacen vistas.
+-- Las citas que ya existían cuentan como vistas (no se avisa nada por ellas).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'citas' AND column_name = 'vista_en') THEN
+        ALTER TABLE citas ADD COLUMN vista_en TIMESTAMPTZ;
+        UPDATE citas SET vista_en = creado_en;
+    END IF;
+END $$;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS vista_por UUID REFERENCES usuarios(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS ix_citas_sin_ver ON citas (fecha) WHERE vista_en IS NULL AND estado = 'confirmada';

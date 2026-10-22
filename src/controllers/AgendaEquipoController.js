@@ -32,6 +32,12 @@ export class AgendaEquipoController {
     res.json({ cita: citaAAdmin(cita) });
   };
 
+  // POST /api/agenda/citas/:id/vista
+  marcarVista = async (req, res) => {
+    const cita = await this.citaService.marcarVista(req.alcance, req.valido.params.id);
+    res.json({ cita: citaAAdmin(cita) });
+  };
+
   // PATCH /api/agenda/citas/:id/reprogramar
   reprogramar = async (req, res) => {
     const cita = await this.citaService.reprogramar(req.alcance, req.valido.params.id, req.body);

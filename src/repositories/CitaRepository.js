@@ -2,7 +2,7 @@ import { filaACita } from '../mappers/citas.mapper.js';
 
 const SELECT_DETALLE = `
   SELECT c.id, c.cliente_id, c.profesional_id, c.servicio_id, c.fecha, c.hora_inicio, c.hora_fin,
-         c.precio, c.precio_tipo, c.precio_max, c.notas, c.estado, c.cancelada_por, c.creado_en, c.creada_por,
+         c.precio, c.precio_tipo, c.precio_max, c.notas, c.estado, c.cancelada_por, c.creado_en, c.creada_por, c.vista_en,
          s.nombre AS servicio_nombre, p.nombre AS profesional_nombre,
          -- Clienta con cuenta (usuarios) o agendada por el salón sin cuenta (columnas propias)
          COALESCE(u.nombre, c.cliente_nombre) AS cliente_nombre,
@@ -81,8 +81,10 @@ export class CitaRepository {
   async crear(c) {
     const { rows } = await this.db.query(
       `INSERT INTO citas (cliente_id, profesional_id, servicio_id, fecha, hora_inicio, hora_fin, precio, notas,
-                          cliente_nombre, cliente_telefono, creada_por, precio_tipo, precio_max)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                          cliente_nombre, cliente_telefono, creada_por, precio_tipo, precio_max, vista_en, vista_por)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+               -- La agendó el salón: ya está vista
+               CASE WHEN $11::uuid IS NOT NULL THEN NOW() END, $11)
        RETURNING id`,
       [
         c.clienteId,
@@ -115,6 +117,15 @@ export class CitaRepository {
       [id, estado, canceladaPor, estadoActual],
     );
     return rowCount > 0 ? this.buscarPorId(id) : null;
+  }
+
+  /** Marca la cita como vista por el salón. Devuelve false si ya lo estaba (así se avisa una sola vez). */
+  async marcarVista(id, usuarioId) {
+    const { rowCount } = await this.db.query(
+      `UPDATE citas SET vista_en = NOW(), vista_por = $2 WHERE id = $1 AND vista_en IS NULL`,
+      [id, usuarioId],
+    );
+    return rowCount > 0;
   }
 
   async reprogramar(id, { profesionalId, fecha, horaInicio, horaFin }) {

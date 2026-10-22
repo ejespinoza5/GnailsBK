@@ -25,6 +25,7 @@ export function crearAgendaRoutes({ agendaEquipoController: c, requiereEquipo })
   router.patch('/citas/:id/reprogramar', conId, validar(esquemaReprogramar), c.reprogramar);
   router.delete('/citas/:id', conId, c.eliminar);
   router.post('/citas/:id/recordatorio', conId, c.recordatorio);
+  router.post('/citas/:id/vista', conId, c.marcarVista);
   router.get('/disponibilidad', validar(esquemaDisponibilidadAdmin, 'query'), c.disponibilidad);
   router.get('/clientas', validar(esquemaBuscarClientas, 'query'), c.buscarClientas);
 

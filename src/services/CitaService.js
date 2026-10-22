@@ -209,6 +209,20 @@ export class CitaService {
     }
   }
 
+  /**
+   * La dueña o la profesional confirma que vio la cita: a la clienta le llega
+   * "Tu turno está asegurado" (una sola vez, y solo si la cita todavía no pasó).
+   */
+  async marcarVista(alcance, citaId) {
+    const cita = await this.#citaDelEquipo(alcance, citaId);
+    if (cita.vistaEn) return cita;
+    const marcada = await this.citaRepo.marcarVista(citaId, alcance.usuarioId);
+    if (marcada && cita.estado === 'confirmada' && minutosHasta(this.reloj.ahora(), cita.fecha, cita.horaInicio) > 0) {
+      this.#avisar('vista', cita, alcance.usuarioId);
+    }
+    return this.citaRepo.buscarPorId(citaId);
+  }
+
   /** Recordatorio que la dueña o la profesional envía a mano (máximo uno cada 10 minutos por cita). */
   async enviarRecordatorio(alcance, citaId) {
     const cita = await this.#citaDelEquipo(alcance, citaId);

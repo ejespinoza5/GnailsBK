@@ -89,6 +89,7 @@ export function filaACita(f) {
     clienteEmail: f.cliente_email,
     clienteTelefono: f.cliente_telefono,
     creadaPor: f.creada_por ?? null,
+    vistaEn: f.vista_en ?? null,
   };
 }
 
@@ -142,6 +143,8 @@ export function citaAAdmin(c) {
       conCuenta: Boolean(c.clienteId),
     },
     agendadaPorSalon: Boolean(c.creadaPor),
+    // Solo para el equipo: la clienta nunca ve si su cita fue vista.
+    vista: Boolean(c.vistaEn),
     creadoEn: c.creadoEn,
   };
 }
